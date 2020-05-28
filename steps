@@ -1,0 +1,9 @@
+0. Register Command (on activate plugin) 
+1. Execute Command (Hook)
+2. Get userId, text from args
+3. get rootId from args
+4. get post from rootId (Get Post)
+5. get otherUserId from post
+6. Create channel from userId and otherUserId (Get Group Channel)
+7. Get channelId from create channel response
+8. CreatePost using userId, channelId, text and rootId (Create Post)
