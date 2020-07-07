@@ -2,23 +2,19 @@ package main
 
 import (
 	"strings"
-	"sync"
 
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/model"
+	"github.com/mattermost/mattermost-server/plugin"
 )
 
-// Plugin that adds a slash command to reply privately
 type Plugin struct {
 	plugin.MattermostPlugin
-
-	// configurationLock synchronizes access to the configuration.
-	configurationLock sync.RWMutex
-
-	// configuration is the active plugin configuration. Consult getConfiguration and
-	// setConfiguration for usage.
-	configuration *Configuration
 }
+
+// // ServeHTTP demonstrates a plugin that handles HTTP requests by greeting the world.
+// func (p *HelloWorldPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+// 	fmt.Fprint(w, "Hello, world!")
+// }
 
 const (
 	trigger = "private"
@@ -31,12 +27,12 @@ func (p *Plugin) OnActivate() error {
 		Description:      "Reply privately to message",
 		DisplayName:      "Reply Privately",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Hide a spoiler message (Use it by clicking reply first then slash command)",
+		AutoCompleteDesc: "Reply to a message (Use it by clicking reply first then slash command)",
 		AutoCompleteHint: "Let's talk here",
 	})
 }
 
-// ExecuteCommand ro send message
+// ExecuteCommand to send message
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	rawText := strings.TrimSpace((strings.Replace(args.Command, "/"+trigger, "", 1)))
 	userID := args.UserId
@@ -49,18 +45,18 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 
 	otherUserID := post.UserId
 
-	channel, err1 := GetGroupChannel([]string{userID, otherUserID})
+	channel, err1 := p.API.GetDirectChannel(userID, otherUserID)
 	if err1 != nil {
 		return nil, err1
 	}
 
-	channelID := channel.UserId
+	channelID := channel.Id
 
 	postModel := &model.Post{
 		UserId:    userID,
 		ChannelId: channelID,
-		RootId:    rootID,
-		Message:   rawText,
+		// RootId:    rootID,
+		Message: rawText,
 	}
 
 	_, err2 := p.API.CreatePost(postModel)
@@ -69,4 +65,8 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	}
 
 	return &model.CommandResponse{}, nil
+}
+
+func main() {
+	plugin.ClientMain(&Plugin{})
 }
